@@ -27,6 +27,7 @@ Add new websites for web datasource
 - Install and configure [AWS CLI](https://aws.amazon.com/cli/)
 - Install and bootstrap [AWS CDK](https://aws.amazon.com/cdk/)
 - Pick a region from the Amazon Bedrock [Supported Regions](https://docs.aws.amazon.com/bedrock/latest/userguide/bedrock-regions.html)
+- `CDK_DEFAULT_REGION` and `CDK_DEFAULT_ACCOUNT` set in your environment
 
 ### Backend
 

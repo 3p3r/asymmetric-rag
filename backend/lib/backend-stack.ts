@@ -21,6 +21,8 @@ import * as logs from "aws-cdk-lib/aws-logs";
 import * as cr from "aws-cdk-lib/custom-resources";
 import * as events from "aws-cdk-lib/aws-events";
 import * as targets from "aws-cdk-lib/aws-events-targets";
+import * as ec2 from "aws-cdk-lib/aws-ec2";
+import { KeyPair } from "cdk-ec2-key-pair";
 import { join } from "path";
 
 export class BackendStack extends Stack {
@@ -208,7 +210,21 @@ export class BackendStack extends Stack {
       })
     );
 
-    const whitelistedIps = [Stack.of(this).node.tryGetContext("allowedip")];
+    // const defaultVpc = ec2.Vpc.fromLookup(this, "BastionVPC", { isDefault: true });
+    const bastionVpc = new ec2.Vpc(this, "BastionVPC");
+    const bastionKey = new KeyPair(this, "BastionKeyPair", {
+      keyPairName: `rag-access-key-${Stack.of(this).stackName}`,
+    });
+    const bastionIpAddress = new ec2.CfnEIP(this, "BastionEIP");
+    const bastionHost = new ec2.BastionHostLinux(this, "BastionHost", {
+      vpc: bastionVpc,
+    });
+    bastionHost.instance.instance.addPropertyOverride("KeyName", bastionKey.keyPairName);
+    new ec2.CfnEIPAssociation(this, "BastionEIPAssociation", {
+      eip: bastionIpAddress.ref,
+      instanceId: bastionHost.instanceId,
+    });
+    bastionHost.allowSshAccessFrom(ec2.Peer.anyIpv4(), ec2.Peer.anyIpv6());
 
     const apiGateway = new apigw.RestApi(this, "rag", {
       description: "API for RAG",
@@ -274,7 +290,7 @@ export class BackendStack extends Stack {
      */
     // Create an IPSet
     const allowedIpSet = new wafv2.CfnIPSet(this, "DevIpSet", {
-      addresses: whitelistedIps, // whitelisted IPs in CIDR format
+      addresses: [`${bastionIpAddress.attrPublicIp}/32`], // whitelisted IPs in CIDR format
       ipAddressVersion: "IPV4",
       scope: "REGIONAL",
       description: "List of allowed IP addresses",
@@ -351,6 +367,10 @@ export class BackendStack extends Stack {
 
     new CfnOutput(this, "DocsBucketName", {
       value: docsBucket.bucketName,
+    });
+
+    new CfnOutput(this, "BastionAddress", {
+      value: bastionIpAddress.attrPublicIp,
     });
   }
 }
