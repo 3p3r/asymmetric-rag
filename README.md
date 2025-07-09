@@ -36,15 +36,14 @@ Add new websites for web datasource
 - Use CDK to deploy the backend to AWS. For example,
 
 ```
-cdk deploy --context allowedip="xxx.xxx.xxx.xxx/32"
+cdk deploy
 ```
-
-Provide an client IP address that is allowed to access the API Gateway in CIDR format as part of the 'allowedip' context variable.
 
 When the deployment completes,
 
 - Make note of the API Gateway URL shown at BackendStack.APIGatewayUrl output.
 - Make note of the S3 bucket name shown at BackendStack.DocsBucketName output.
+- SSH into the bastion IP address and forward your traffic through the tunnel.
 
 ### Amazon Bedrock foundational model
 
@@ -80,7 +79,7 @@ Use "cdk destroy" to delete the stack of cloud resources created in this solutio
 - [Amazon Q Developer](https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/security-scans.html) project scan is run to confirm there are no vulnerabilities in the codebase.
 - S3 bucket created in this project is setup to enforce ssl requests only and encrypt data at rest.
 - S3 bucket is setup to block public access.
-- API Gateway is setup with AWS Web Application Firewall to allow requests from a specific IP address only.
+- API Gateway is setup with AWS Web Application Firewall to allow requests from a specific IP address only (the bastion host).
 
 ## Credit
 
